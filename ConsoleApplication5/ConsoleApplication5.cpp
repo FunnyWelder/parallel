@@ -38,7 +38,7 @@ struct Schet {
 #endif
 
 
-#define STEPS 500000000
+#define STEPS 10000000
 
 double func(double x)
 {
@@ -71,9 +71,9 @@ experiment_result run_experiment(I_t I)
 void show_experiment_results_cli(I_t I, std::string name)
 {
     double T1;
-    std::cout << "integrate_cpp" << '\n';
+    std::cout << name << '\n';
     printf("%10s\t%10s\t%10s\n", "Result", "Time_ms", "Speed");
-    for (int T = 1; T <= omp_get_num_procs(); ++T) {
+    for (unsigned T = 1; T <= omp_get_num_procs(); ++T) {
         experiment_result R;
         set_num_threads(T);
         R = run_experiment(I);
@@ -84,13 +84,20 @@ void show_experiment_results_cli(I_t I, std::string name)
     std::cout << '\n';
 };
 
-void show_experiment_results_py(I_t I, std::string name, std::string file_path)
+#include <filesystem>
+void show_experiment_results_json(I_t I, std::string name, std::string file_path)
 {
     using namespace std;
 
     ofstream out;
 
-    out.open(file_path);
+    if (!filesystem::exists(file_path)) {
+        error_code ec;
+        filesystem::create_directories(file_path, ec);
+    }
+
+    std::string full_file_path = file_path + "\\" + name + ".json";
+    out.open(full_file_path);
     if (out.is_open())
     {
         struct_mapping::reg(&Schet::name, "name");
@@ -102,7 +109,7 @@ void show_experiment_results_py(I_t I, std::string name, std::string file_path)
         schet.name = name;
 
         double T1;
-        for (int T = 1; T <= omp_get_num_procs(); ++T) {
+        for (unsigned T = 1; T <= omp_get_num_procs(); ++T) {
             experiment_result R;
             set_num_threads(T);
             R = run_experiment(I);
@@ -119,8 +126,6 @@ void show_experiment_results_py(I_t I, std::string name, std::string file_path)
 
         out << json_data.str() << std::endl;
     }
-
-    //system("python python/main.py");
 };
 
 
@@ -128,13 +133,11 @@ void show_experiment_results_py(I_t I, std::string name, std::string file_path)
 
 double integrate_crit(double a, double b, f_t f)
 {
-    double Result = 0;
-    double dx = (b - a) / STEPS;
+    double Result = 0, dx = (b - a) / STEPS;
     #pragma omp parallel shared(Result)
     {
         double R = 0;
-        unsigned t = omp_get_thread_num();
-        unsigned T = (unsigned)omp_get_num_threads();
+        unsigned t = (unsigned) omp_get_thread_num(), T = (unsigned) get_num_threads();
         for (unsigned i = t; i < STEPS; i += T)
         {
             R += f(i * dx + a);
@@ -148,11 +151,11 @@ double integrate_crit(double a, double b, f_t f)
 double integrate_cpp_mtx(double a, double b, f_t f)
 {
     using namespace std;
+
     unsigned T = get_num_threads();
     vector <thread> threads;
     mutex mtx;
-    double Result = 0;
-    double dx = (b - a) / STEPS;
+    double Result = 0, dx = (b - a) / STEPS;
 
     for (unsigned t = 0; t < T; ++t)
         threads.emplace_back([=, &Result, &mtx]()
@@ -178,15 +181,14 @@ double integrate_cpp_mtx(double a, double b, f_t f)
 double integrate(double a, double b, f_t f)
 {
     unsigned T;
-    double Result = 0;
-    double dx = (b - a) / STEPS;
+    double Result = 0, dx = (b - a) / STEPS;
     double* Accum;
     #pragma omp parallel shared(Accum, T)
     {
-        unsigned t = (unsigned int)omp_get_thread_num();
+        unsigned t = (unsigned) omp_get_thread_num();
         #pragma omp single
         {
-            T = (unsigned)omp_get_num_threads();
+            T = (unsigned) get_num_threads();
             Accum = (double*)calloc(T, sizeof(double));
         }
 
@@ -194,8 +196,10 @@ double integrate(double a, double b, f_t f)
             Accum[t] += f(dx * i + a);
     }
 
-    for (unsigned int i = 0; i < T; i++)
+    for (unsigned i = 0; i < T; i++)
         Result += Accum[i];
+
+    free(Accum);
 
     return Result * dx;
 }
@@ -203,15 +207,14 @@ double integrate(double a, double b, f_t f)
 double integrate_aligned(double a, double b, f_t f)
 {
     unsigned T;
-    double Result = 0;
-    double dx = (b - a) / STEPS;
+    double Result = 0, dx = (b - a) / STEPS;
     partial_sum_t* Accum;
     #pragma omp parallel shared(Accum, T)
     {
-        unsigned t = (unsigned)omp_get_thread_num();
+        unsigned t = (unsigned) omp_get_thread_num();
         #pragma omp single
         {
-            T = (unsigned)omp_get_num_threads();
+            T = (unsigned) get_num_threads();
             Accum = (partial_sum_t*) aligned_alloc(alignof(partial_sum_t), T * sizeof(partial_sum_t_));
         }
 
@@ -220,7 +223,7 @@ double integrate_aligned(double a, double b, f_t f)
             Accum[t].result += f(dx * i + a);
     }
 
-    for (unsigned int i = 0; i < T; i++)
+    for (unsigned i = 0; i < T; i++)
         Result += Accum[i].result;
 
     _aligned_free(Accum);
@@ -230,11 +233,10 @@ double integrate_aligned(double a, double b, f_t f)
 
 double integrate_reduction(double a, double b, f_t f)
 {
-    double Result = 0.0;
-    double dx = (b - a) / STEPS;
-    int i;
+    double Result = 0, dx = (b - a) / STEPS;
+
     #pragma omp parallel for reduction(+:Result)
-    for (i = 0; i < STEPS; i++)
+    for (int i = 0; i < STEPS; i++)
     {
         Result += f(dx * i + a);
     }
@@ -244,8 +246,7 @@ double integrate_reduction(double a, double b, f_t f)
 
 double integrate_cpp(double a, double b, f_t f)
 {
-    double Result = 0;
-    double dx = (b - a) / STEPS;
+    double Result = 0, dx = (b - a) / STEPS;
     using namespace std;
     unsigned T = get_num_threads();
     auto vec = vector(T, partial_sum_t{ 0.0 });
@@ -256,7 +257,7 @@ double integrate_cpp(double a, double b, f_t f)
             vec[t].result += f(dx * i + a);
     };
 
-    for (unsigned int t = 1; t < T; t++)
+    for (unsigned t = 1; t < T; t++)
         threads.emplace_back(threads_proc,t);
 
     threads_proc(0);
@@ -272,8 +273,7 @@ double integrate_cpp(double a, double b, f_t f)
 
 double integrate_omp_for(double a, double b, f_t f)
 {
-    double Result = 0;
-    double dx = (b - a) / STEPS;
+    double Result = 0, dx = (b - a) / STEPS;
     int i;
 
     #pragma omp parallel for shared (Result) 
@@ -305,7 +305,7 @@ double integrate_cpp_reduction(double a, double b, f_t f)
         Result += R;
     };
 
-    for (unsigned int t = 1; t < T; t++)
+    for (unsigned t = 1; t < T; t++)
         threads.emplace_back(threads_proc, t);
 
     threads_proc(0);
@@ -379,15 +379,31 @@ double integrate_reduce(double a, double b, f_t f) {
     
 int main()
 {
-    show_experiment_results_py(integrate_crit, "integrate_crit", "python\\graphics\\integrate_crit.json");
-    show_experiment_results_py(integrate_cpp_mtx, "integrate_cpp_mtx", "python\\graphics\\integrate_cpp_mtx.json");
-    show_experiment_results_py(integrate, "integrate", "python\\graphics\\integrate.json");
-    show_experiment_results_py(integrate_aligned, "integrate_aligned", "python\\graphics\\integrate_aligned.json");
-    show_experiment_results_py(integrate_reduction, "integrate_reduction", "python\\graphics\\integrate_reduction.json");
-    show_experiment_results_py(integrate_cpp, "integrate_cpp", "python\\graphics\\integrate_cpp.json");
-    show_experiment_results_py(integrate_omp_for, "integrate_omp_for", "python\\graphics\\integrate_omp_for.json");
-    show_experiment_results_py(integrate_cpp_reduction, "integrate_cpp_reduction", "python\\graphics\\integrate_cpp_reduction.json");
-    show_experiment_results_py(integrate_reduce, "integrate_reduce", "python\\graphics\\integrate_reduce.json");
+    /*
+    show_experiment_results_json(integrate_crit, "integrate_crit", ".\\graphics");
+    show_experiment_results_json(integrate_cpp_mtx, "integrate_cpp_mtx", ".\\graphics");
+    show_experiment_results_json(integrate, "integrate", ".\\graphics");
+    show_experiment_results_json(integrate_aligned, "integrate_aligned", ".\\graphics");
+    show_experiment_results_json(integrate_reduction, "integrate_reduction", ".\\graphics");
+    show_experiment_results_json(integrate_cpp, "integrate_cpp", ".\\graphics");
+    show_experiment_results_json(integrate_omp_for, "integrate_omp_for", ".\\graphics");
+    show_experiment_results_json(integrate_cpp_reduction, "integrate_cpp_reduction", ".\\graphics");
+    show_experiment_results_json(integrate_reduce, "integrate_reduce", ".\\graphics");
+    */
+
+    //show_experiment_results_cli(integrate_crit, "integrate_crit");
+    //show_experiment_results_cli(integrate_cpp_mtx, "integrate_cpp_mtx");
+    //show_experiment_results_cli(integrate, "integrate");
+    //show_experiment_results_cli(integrate_aligned, "integrate_aligned");
+    //show_experiment_results_cli(integrate_reduction, "integrate_reduction");
+    //show_experiment_results_cli(integrate_cpp, "integrate_cpp");
+    show_experiment_results_cli(integrate_omp_for, "integrate_omp_for");
+    //show_experiment_results_cli(integrate_cpp_reduction, "integrate_cpp_reduction");
+    //show_experiment_results_cli(integrate_reduce, "integrate_reduce");
+
+    //Спросить про integrate и integrate_omp_for, почему неправильно работают 
+    // (первый не ускоряется, а второй медленный шо пиздец)
+    // + поменять STEPS
 
     return 0;
 }

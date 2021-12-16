@@ -1,7 +1,9 @@
 ﻿  ConsoleApplication5.cpp
+C:\Users\Slava\source\repos\ConsoleApplication5\ConsoleApplication5\ConsoleApplication5.cpp(76,28): warning C4018: <=: несоответствие типов со знаком и без знака
+C:\Users\Slava\source\repos\ConsoleApplication5\ConsoleApplication5\ConsoleApplication5.cpp(112,32): warning C4018: <=: несоответствие типов со знаком и без знака
   Создание кода
-  52 of 2448 functions ( 2.1%) were compiled, the rest were copied from previous compilation.
-    17 functions were new in current compilation
-    2 functions had inline decision re-evaluated but remain unchanged
+  372 of 1015 functions (36.7%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    113 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
   ConsoleApplication5.vcxproj -> C:\Users\Slava\source\repos\ConsoleApplication5\x64\Release\ConsoleApplication5.exe
