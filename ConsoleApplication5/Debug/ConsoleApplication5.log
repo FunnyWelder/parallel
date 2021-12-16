@@ -1,0 +1,4 @@
+﻿  ConsoleApplication5.cpp
+C:\Users\Slava\source\repos\ConsoleApplication5\ConsoleApplication5\ConsoleApplication5.cpp(133,28): warning C4018: <=: несоответствие типов со знаком и без знака
+C:\Users\Slava\source\repos\ConsoleApplication5\ConsoleApplication5\ConsoleApplication5.cpp(242,23): warning C4101: i: неиспользованная локальная переменная
+  ConsoleApplication5.vcxproj -> C:\Users\Slava\source\repos\ConsoleApplication5\Debug\ConsoleApplication5.exe

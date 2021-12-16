@@ -1,0 +1,9 @@
+﻿  ConsoleApplication5.cpp
+C:\Users\Slava\source\repos\ConsoleApplication5\ConsoleApplication5\ConsoleApplication5.cpp(133,28): warning C4018: <=: несоответствие типов со знаком и без знака
+C:\Users\Slava\source\repos\ConsoleApplication5\ConsoleApplication5\ConsoleApplication5.cpp(242,23): warning C4101: i: неиспользованная локальная переменная
+  Создание кода
+  6 of 190 functions ( 3.2%) were compiled, the rest were copied from previous compilation.
+    1 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  Создание кода завершено
+  ConsoleApplication5.vcxproj -> C:\Users\Slava\source\repos\ConsoleApplication5\Release\ConsoleApplication5.exe
