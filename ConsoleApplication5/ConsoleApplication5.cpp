@@ -376,6 +376,33 @@ double integrate_reduce(double a, double b, f_t f) {
     return reduce_range(a, b, STEPS, f, [](auto x, auto y) {return x + y;}, 0.0) * ((b-a)/STEPS);
 }
 
+
+class barrier
+{
+    bool lock_oddity = false;
+    unsigned T;
+    const unsigned T_max;
+    std::condition_variable cv;
+    std::mutex mtx;
+
+public:
+    void arrive_and_wait()
+    {
+        std::unique_lock lock(mtx);
+        if (--T == 0)
+        {
+            lock_oddity = !lock_oddity;
+            T = T_max;
+            cv.notify_all();
+        }
+        else {
+            auto my_lock = lock_oddity;
+            while (my_lock == lock_oddity)
+                cv.wait(lock);
+        }
+    }
+};
+
     
 int main()
 {
