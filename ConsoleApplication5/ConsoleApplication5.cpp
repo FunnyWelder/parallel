@@ -38,7 +38,7 @@ struct Schet {
 #endif
 
 
-#define STEPS 10000000
+#define STEPS 50000000
 
 double func(double x)
 {
@@ -178,7 +178,7 @@ double integrate_cpp_mtx(double a, double b, f_t f)
     return Result * dx;
 }
 
-double integrate(double a, double b, f_t f)
+double integrate_false_sharing(double a, double b, f_t f)
 {
     unsigned T;
     double Result = 0, dx = (b - a) / STEPS;
@@ -406,31 +406,25 @@ public:
     
 int main()
 {
-    /*
     show_experiment_results_json(integrate_crit, "integrate_crit", ".\\graphics");
     show_experiment_results_json(integrate_cpp_mtx, "integrate_cpp_mtx", ".\\graphics");
-    show_experiment_results_json(integrate, "integrate", ".\\graphics");
+    show_experiment_results_json(integrate_false_sharing, "integrate_false_sharing", ".\\graphics");
     show_experiment_results_json(integrate_aligned, "integrate_aligned", ".\\graphics");
     show_experiment_results_json(integrate_reduction, "integrate_reduction", ".\\graphics");
     show_experiment_results_json(integrate_cpp, "integrate_cpp", ".\\graphics");
     show_experiment_results_json(integrate_omp_for, "integrate_omp_for", ".\\graphics");
     show_experiment_results_json(integrate_cpp_reduction, "integrate_cpp_reduction", ".\\graphics");
     show_experiment_results_json(integrate_reduce, "integrate_reduce", ".\\graphics");
-    */
 
     //show_experiment_results_cli(integrate_crit, "integrate_crit");
     //show_experiment_results_cli(integrate_cpp_mtx, "integrate_cpp_mtx");
-    //show_experiment_results_cli(integrate, "integrate");
+    //show_experiment_results_cli(integrate_false_sharing, "integrate_false_sharing");
     //show_experiment_results_cli(integrate_aligned, "integrate_aligned");
     //show_experiment_results_cli(integrate_reduction, "integrate_reduction");
     //show_experiment_results_cli(integrate_cpp, "integrate_cpp");
-    show_experiment_results_cli(integrate_omp_for, "integrate_omp_for");
+    //show_experiment_results_cli(integrate_omp_for, "integrate_omp_for");
     //show_experiment_results_cli(integrate_cpp_reduction, "integrate_cpp_reduction");
     //show_experiment_results_cli(integrate_reduce, "integrate_reduce");
-
-    //Спросить про integrate и integrate_omp_for, почему неправильно работают 
-    // (первый не ускоряется, а второй медленный шо пиздец)
-    // + поменять STEPS
 
     return 0;
 }
